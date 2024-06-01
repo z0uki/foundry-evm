@@ -9,7 +9,7 @@ alloy-json-abi = "0.7.2"
 alloy-sol-types = { version = "0.7.2", default-features = false, features = ["json"]}
 alloy-primitives = { version = "0.7.2", features = ["serde", "getrandom", "arbitrary", "rlp"] }
 alloy-genesis = { git = "https://github.com/alloy-rs/alloy.git", rev = "4ecb7d8", default-features = false }
-alloy-provider = { git = "https://github.com/alloy-rs/alloy.git", rev = "4ecb7d8", default-features = false }
+alloy-provider = { git = "https://github.com/alloy-rs/alloy.git", rev = "4ecb7d8", default-features = false, features = ["ws", "reqwest"] }
 alloy-transport = { git = "https://github.com/alloy-rs/alloy.git", rev = "4ecb7d8", default-features = false }
 alloy-rpc-types = { git = "https://github.com/alloy-rs/alloy.git", rev = "4ecb7d8", default-features = false }
 alloy-rpc-types-engine = { git = "https://github.com/alloy-rs/alloy.git", rev = "4ecb7d8", default-features = false }
@@ -36,6 +36,8 @@ revm = { version = "9", default-features = false, features = [
 revm-inspectors = { git = "https://github.com/paradigmxyz/revm-inspectors", rev = "0d3f1f4", features = [
     "serde",
 ] }
+
+rayon = "1.8.1"
 
 arrayvec = "0.7"
 auto_impl = "1"

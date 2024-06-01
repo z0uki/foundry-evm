@@ -4,8 +4,8 @@ use crate::{
     fork::{cache::FlushJsonBlockCacheDB, BlockchainDb},
 };
 use alloy_primitives::{keccak256, Address, Bytes, B256, U256};
-use alloy_provider::{network::AnyNetwork, Provider};
-use alloy_rpc_types::{Block, BlockId, Transaction, WithOtherFields};
+use alloy_provider::{network::Ethereum, Provider};
+use alloy_rpc_types::{Block, BlockId, Transaction};
 use alloy_transport::Transport;
 use eyre::WrapErr;
 use futures::{
@@ -42,23 +42,14 @@ type StorageFuture<Err> = Pin<Box<dyn Future<Output = (Result<U256, Err>, Addres
 type BlockHashFuture<Err> = Pin<Box<dyn Future<Output = (Result<B256, Err>, u64)> + Send>>;
 type FullBlockFuture<Err> =
     Pin<Box<dyn Future<Output = (FullBlockSender, Result<Option<Block>, Err>, BlockId)> + Send>>;
-type TransactionFuture<Err> = Pin<
-    Box<
-        dyn Future<
-                Output = (
-                    TransactionSender,
-                    Result<WithOtherFields<Transaction>, Err>,
-                    B256,
-                ),
-            > + Send,
-    >,
->;
+type TransactionFuture<Err> =
+    Pin<Box<dyn Future<Output = (TransactionSender, Result<Transaction, Err>, B256)> + Send>>;
 
 type AccountInfoSender = OneshotSender<DatabaseResult<AccountInfo>>;
 type StorageSender = OneshotSender<DatabaseResult<U256>>;
 type BlockHashSender = OneshotSender<DatabaseResult<B256>>;
 type FullBlockSender = OneshotSender<DatabaseResult<Block>>;
-type TransactionSender = OneshotSender<DatabaseResult<WithOtherFields<Transaction>>>;
+type TransactionSender = OneshotSender<DatabaseResult<Transaction>>;
 
 /// Request variants that are executed by the provider
 enum ProviderRequest<Err> {
@@ -116,7 +107,7 @@ pub struct BackendHandler<T, P> {
 impl<T, P> BackendHandler<T, P>
 where
     T: Transport + Clone,
-    P: Provider<T, AnyNetwork> + Clone + Unpin + 'static,
+    P: Provider<T, Ethereum> + Clone + Unpin + 'static,
 {
     fn new(
         provider: P,
@@ -331,7 +322,7 @@ where
 impl<T, P> Future for BackendHandler<T, P>
 where
     T: Transport + Clone + Unpin,
-    P: Provider<T, AnyNetwork> + Clone + Unpin + 'static,
+    P: Provider<T, Ethereum> + Clone + Unpin + 'static,
 {
     type Output = ();
 
@@ -573,7 +564,7 @@ impl SharedBackend {
     ) -> Self
     where
         T: Transport + Clone + Unpin,
-        P: Provider<T, AnyNetwork> + Unpin + 'static + Clone,
+        P: Provider<T, Ethereum> + Unpin + 'static + Clone,
     {
         let (shared, handler) = Self::new(provider, db, pin_block);
         // spawn the provider handler to a task
@@ -591,7 +582,7 @@ impl SharedBackend {
     ) -> Self
     where
         T: Transport + Clone + Unpin,
-        P: Provider<T, AnyNetwork> + Unpin + 'static + Clone,
+        P: Provider<T, Ethereum> + Unpin + 'static + Clone,
     {
         let (shared, handler) = Self::new(provider, db, pin_block);
 
@@ -621,7 +612,7 @@ impl SharedBackend {
     ) -> (Self, BackendHandler<T, P>)
     where
         T: Transport + Clone + Unpin,
-        P: Provider<T, AnyNetwork> + Unpin + 'static + Clone,
+        P: Provider<T, Ethereum> + Unpin + 'static + Clone,
     {
         let (backend, backend_rx) = channel(1);
         let cache = Arc::new(FlushJsonBlockCacheDB(Arc::clone(db.cache())));
@@ -649,7 +640,7 @@ impl SharedBackend {
     }
 
     /// Returns the transaction for the hash
-    pub fn get_transaction(&self, tx: B256) -> DatabaseResult<WithOtherFields<Transaction>> {
+    pub fn get_transaction(&self, tx: B256) -> DatabaseResult<Transaction> {
         tokio::task::block_in_place(|| {
             let (sender, rx) = oneshot_channel();
             let req = BackendRequest::Transaction(tx, sender);

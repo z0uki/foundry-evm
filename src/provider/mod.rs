@@ -9,7 +9,7 @@ use crate::{
 };
 use alloy_provider::{
     fillers::{ChainIdFiller, FillProvider, GasFiller, JoinFill, NonceFiller, SignerFiller},
-    network::{AnyNetwork, EthereumSigner},
+    network::{Ethereum, EthereumSigner},
     Identity, ProviderBuilder as AlloyProviderBuilder, RootProvider,
 };
 use alloy_rpc_client::ClientBuilder;
@@ -27,10 +27,10 @@ use tower::{RetryBackoffLayer, RetryBackoffService};
 use url::ParseError;
 
 /// Helper type alias for a retry provider
-pub type RetryProvider<N = AnyNetwork> = RootProvider<RetryBackoffService<RuntimeTransport>, N>;
+pub type RetryProvider<N = Ethereum> = RootProvider<RetryBackoffService<RuntimeTransport>, N>;
 
 /// Helper type alias for a retry provider with a signer
-pub type RetryProviderWithSigner<N = AnyNetwork> = FillProvider<
+pub type RetryProviderWithSigner<N = Ethereum> = FillProvider<
     JoinFill<
         JoinFill<JoinFill<JoinFill<Identity, GasFiller>, NonceFiller>, ChainIdFiller>,
         SignerFiller<EthereumSigner>,
@@ -265,7 +265,7 @@ impl ProviderBuilder {
             .layer(retry_layer)
             .transport(transport, is_local);
 
-        let provider = AlloyProviderBuilder::<_, _, AnyNetwork>::default()
+        let provider = AlloyProviderBuilder::<_, _, Ethereum>::default()
             .on_provider(RootProvider::new(client));
 
         Ok(provider)
@@ -304,7 +304,7 @@ impl ProviderBuilder {
             .layer(retry_layer)
             .transport(transport, is_local);
 
-        let provider = AlloyProviderBuilder::<_, _, AnyNetwork>::default()
+        let provider = AlloyProviderBuilder::<_, _, Ethereum>::default()
             .with_recommended_fillers()
             .signer(signer)
             .on_provider(RootProvider::new(client));
